@@ -299,22 +299,35 @@ class LinearMatrixGroup_gap(NamedMatrixGroup_gap, LinearMatrixGroup_generic, Fin
     """
     
     def dickson_invariant(self, es):
-        from sage.all import var, PolynomialRing, matrix
-        assert len(es)==self.degree(), "List 'es' must contain exactly as many elements as the degree of the matrix group" # ?
-        assert self.base_ring().is_finite() # ? 
-        n=len(es) 
-        p=self.base_ring().order() # ?
 
+        """
+        Calculate the dickson invariant of self via construction of the moore determinant given by the values in es.
+        """
+
+        from sage.all import PolynomialRing, matrix, is_prime
+
+        assert self.base_ring().field().is_finite(), "The dickson invariant can only be calculated for groups over a finite field."
+
+        p=self.base_ring().field().characteristic()
+        n=self.degree()
+
+        assert is_prime(p), "The dickson invariant can only be calculated for groups over a finite fields of order a prime power."
+        assert len(es)==n, f"Input list 'es' must contain exactly as many elements as the degree of the group, in this case {n}."
+
+        # We need to declare fresh variables for the base ring
         varnames=['p','q','r','s','t','u','v','w','x','y','z']
         vars = varnames[-n:]
 
+        # construct polynomial ring P to base moore matrix over
         P = PolynomialRing(self.base_ring(), vars)
 
+        # calculate a particular entry for the moore matrix
         def matrix_entry(row, col):
             return P.gens()[row]**(p**es[col])
 
         m=matrix([[matrix_entry(row, col) for col in range(n)] for row in range(n)])
 
+        # calculate moore determinant and return
         return m.determinant()
 
     pass
