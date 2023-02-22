@@ -297,4 +297,24 @@ class LinearMatrixGroup_gap(NamedMatrixGroup_gap, LinearMatrixGroup_generic, Fin
         sage: isinstance(G, FinitelyGeneratedMatrixGroup_gap)
         True
     """
+    
+    def dickson_invariant(self, es):
+        from sage.all import var, PolynomialRing, matrix
+        assert len(es)==self.degree(), "List 'es' must contain exactly as many elements as the degree of the matrix group" # ?
+        assert self.base_ring().is_finite() # ? 
+        n=len(es) 
+        p=self.base_ring().order() # ?
+
+        varnames=['p','q','r','s','t','u','v','w','x','y','z']
+        vars = varnames[-n:]
+
+        P = PolynomialRing(self.base_ring(), vars)
+
+        def matrix_entry(row, col):
+            return P.gens()[row]**(p**es[col])
+
+        m=matrix([[matrix_entry(row, col) for col in range(n)] for row in range(n)])
+
+        return m.determinant()
+
     pass
