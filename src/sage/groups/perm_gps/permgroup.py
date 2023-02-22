@@ -103,7 +103,7 @@ AUTHORS:
 
 - Javier Lopez Pena (2013): Added conjugacy classes.
 
-- Sebastian Oehms (2018): added _coerce_map_from_ in order to use isomorphism coming up with as_permutation_group method (Trac #25706)
+- Sebastian Oehms (2018): added _coerce_map_from_ in order to use isomorphism coming up with as_permutation_group method (Issue #25706)
 - Christian Stump (2018): Added alternative implementation of strong_generating_system directly using GAP.
 
 - Sebastian Oehms (2018): Added :meth:`PermutationGroup_generic._Hom_` to use :class:`sage.groups.libgap_morphism.GroupHomset_libgap` and :meth:`PermutationGroup_generic.gap` and
@@ -142,8 +142,7 @@ from sage.misc.randstate import current_randstate
 from sage.groups.group import FiniteGroup
 
 from sage.rings.all import QQ, Integer
-from sage.interfaces.expect import is_ExpectElement
-from sage.interfaces.gap import GapElement
+from sage.interfaces.abc import ExpectElement, GapElement
 from sage.libs.gap.libgap import libgap
 from sage.libs.gap.element import GapElement as LibGapElement
 from sage.groups.perm_gps.permgroup_element import PermutationGroupElement
@@ -368,7 +367,7 @@ def PermutationGroup(gens=None, *args, **kwds):
 
         sage: r = Permutation("(1,7,9,3)(2,4,8,6)")
         sage: f = Permutation("(1,3)(4,6)(7,9)")
-        sage: PermutationGroup([r,f]) #See Trac #12597
+        sage: PermutationGroup([r,f]) #See Issue #12597
         Permutation Group with generators [(1,3)(4,6)(7,9), (1,7,9,3)(2,4,8,6)]
 
         sage: PermutationGroup(SymmetricGroup(5))
@@ -382,10 +381,10 @@ def PermutationGroup(gens=None, *args, **kwds):
         doctest:warning
         ...
         DeprecationWarning: gap_group, domain, canonicalize, category will become keyword only
-        See https://trac.sagemath.org/31510 for details.
+        See https://github.com/sagemath/sage/issues/31510 for details.
 
     """
-    if not is_ExpectElement(gens) and hasattr(gens, '_permgroup_'):
+    if not isinstance(gens, ExpectElement) and hasattr(gens, '_permgroup_'):
         return gens._permgroup_()
     if gens is not None and not isinstance(gens, (tuple, list, GapElement)):
         raise TypeError("gens must be a tuple, list, or GapElement")
@@ -1091,7 +1090,7 @@ class PermutationGroup_generic(FiniteGroup):
             doctest:warning
             ...
             DeprecationWarning: G.has_element(g) is deprecated; use :meth:`__contains__`, i.e., `g in G` instead
-            See https://trac.sagemath.org/33831 for details.
+            See https://github.com/sagemath/sage/issues/33831 for details.
             True
             sage: h = H([(1,2),(3,4)]); h
             (1,2)(3,4)
@@ -4666,17 +4665,23 @@ class PermutationGroup_generic(FiniteGroup):
             sage: G = PermutationGroup([[(2,)]])
             sage: G.molien_series()
             1/(x^2 - 2*x + 1)
+
+        TESTS:
+
+        Check that :trac:`34854` is fixed::
+
+            sage: PG = PermutationGroup(["(1,2,3,4,5,6,7)","(5,6,7)"])
+            sage: PG.molien_series()
+            (-x^18 + x^15 - x^12 + x^9 - x^6 + x^3 - 1)/(x^25 - x^24 - x^23 - x^22 + x^21 + 2*x^20 + x^19 - x^17 - x^16 - x^15 - x^13 + x^12 + x^10 + x^9 + x^8 - x^6 - 2*x^5 - x^4 + x^3 + x^2 + x - 1)
+
+        and 2 extra fixed points are correctly accounted for::
+
+            sage: PG1 = PermutationGroup(["(9,2,3,4,5,6,7)","(5,6,7)"])
+            sage: R.<x> = QQ[]
+            sage: PG.molien_series() == PG1.molien_series()*(1-x)^2
+            True
         """
-        pi = self._libgap_().NaturalCharacter()
-        # because NaturalCharacter forgets about fixed points:
-        pi += self._libgap_().TrivialCharacter() * len(self.fixed_points())
-
-        # TODO: pi is a Character from a CharacterTable on self, however libgap
-        # does not know about this type and when adding two Characters just
-        # returns a plain List; this needs to be fixed on the libgap side but
-        # in the meantime we can fix by converting pi back to the right type
-        pi = libgap.VirtualCharacter(self._libgap_().CharacterTable(), pi)
-
+        pi = self._libgap_().PermutationCharacter(list(self.domain()),libgap.OnPoints)
         M = pi.MolienSeries()
 
         R = QQ['x']

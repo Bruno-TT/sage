@@ -78,7 +78,7 @@ DUMMY_PACKAGES = @SAGE_DUMMY_PACKAGES@
 
 # Set to the path to Sage's GCC (if GCC is installed) to force rebuilds
 # of packages if GCC changed.
-# See m4/sage_spkg_collect.m4 and https://trac.sagemath.org/ticket/24703
+# See m4/sage_spkg_collect.m4 and https://github.com/sagemath/sage/issues/24703
 GCC_DEP = @SAGE_GCC_DEP@
 
 # Versions of all the packages, in the format
@@ -443,8 +443,9 @@ $(foreach pkgname, $(NORMAL_PACKAGES) $(SCRIPT_PACKAGES),\
 #
 # Since Python's self-tests seem to fail on all platforms, we disable
 # its test suite by default.
+# meson_python 0.10.0 fails on some platforms, so we reduce it to warnings.
 # However, if SAGE_CHECK=warn, we do not do that.
-SAGE_CHECK_PACKAGES_DEFAULT_yes := !python3
+SAGE_CHECK_PACKAGES_DEFAULT_yes := !python3,?meson_python
 SAGE_CHECK_PACKAGES_DEFAULT_warn :=
 SAGE_CHECK_PACKAGES_DEFAULT_no :=
 comma := ,

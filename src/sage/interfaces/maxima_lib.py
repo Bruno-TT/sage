@@ -128,7 +128,7 @@ ecl_eval("(setf $errormsg nil)")
 # which the text of the question is included. This is accomplished by
 # redirecting *standard-output* to a string.
 #
-# After an update in Trac 31553, this routine also preprocesses the
+# After an update in Issue 31553, this routine also preprocesses the
 # text to replace space symbols with strings. This prevents those
 # symbols from being turned into ugly newlines -- a problem that we
 # used to avoid with a custom patch.
@@ -1009,17 +1009,22 @@ class MaximaLib(MaximaAbstract):
 
 def is_MaximaLibElement(x):
     r"""
-    Returns True if x is of type MaximaLibElement.
+    Return True if ``x`` is of type :class:`MaximaLibElement`.
 
     EXAMPLES::
 
         sage: from sage.interfaces.maxima_lib import maxima_lib, is_MaximaLibElement
+        sage: is_MaximaLibElement(1)
+        doctest:...: DeprecationWarning: the function is_MaximaLibElement is deprecated; use isinstance(x, sage.interfaces.abc.MaximaLibElement) instead
+        See https://github.com/sagemath/sage/issues/34804 for details.
+        False
         sage: m = maxima_lib(1)
         sage: is_MaximaLibElement(m)
         True
-        sage: is_MaximaLibElement(1)
-        False
     """
+    from sage.misc.superseded import deprecation
+    deprecation(34804, "the function is_MaximaLibElement is deprecated; use isinstance(x, sage.interfaces.abc.MaximaLibElement) instead")
+
     return isinstance(x, MaximaLibElement)
 
 

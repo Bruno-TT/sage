@@ -11,7 +11,7 @@ TESTS::
 
     sage: R = ZpLC(2)
     doctest:...: FutureWarning: This class/method/function is marked as experimental. It, its functionality or its interface might change without a formal deprecation.
-    See http://trac.sagemath.org/23505 for details.
+    See https://github.com/sagemath/sage/issues/23505 for details.
     sage: R = ZpLF(2)
     sage: R = QpLC(2)
     sage: R = QpLF(2)
@@ -2949,12 +2949,12 @@ def ZpLF(p, prec=None, *args, **kwds):
 
     See documentation for :func:`Zp` for a description of the input parameters.
 
-    NOTE:
+    .. NOTE::
 
-    The precision is tracked using automatic differentiation
-    techniques (see [CRV2018]_ and [CRV2014]_).
-    Floating point `p`-adic numbers are used for the computation
-    of the differential (which is then not exact).
+        The precision is tracked using automatic differentiation
+        techniques (see [CRV2018]_ and [CRV2014]_).
+        Floating point `p`-adic numbers are used for the computation
+        of the differential (which is then not exact).
 
     EXAMPLES::
 

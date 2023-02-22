@@ -217,7 +217,7 @@ def mpfr_prec_min():
     """
     return MPFR_PREC_MIN
 
-# see Trac #11666 for the origin of this magical constant
+# see Issue #11666 for the origin of this magical constant
 def mpfr_prec_max():
     """
     Return the mpfr variable ``MPFR_PREC_MAX``.
@@ -678,7 +678,7 @@ cdef class RealField_class(sage.rings.abc.RealField):
 
         - Any MPFR real field with precision that is as large as this one
 
-        - int, long, integer, and rational rings.
+        - int, integer, and rational rings.
 
         - the field of algebraic reals
 
@@ -725,7 +725,7 @@ cdef class RealField_class(sage.rings.abc.RealField):
 
             sage: 1.0 - ZZ(1) - int(1) - 1 - QQ(1) - RealField(100)(1) - AA(1) - RLF(1)
             -6.00000000000000
-            sage: R = RR['x']   # Hold reference to avoid garbage collection, see Trac #24709
+            sage: R = RR['x']   # Hold reference to avoid garbage collection, see Issue #24709
             sage: R.get_action(ZZ)
             Right scalar multiplication by Integer Ring on Univariate Polynomial Ring in x over Real Field with 53 bits of precision
         """
@@ -1472,11 +1472,9 @@ cdef class RealNumber(sage.structure.element.RingElement):
         elif isinstance(x, Gen) and typ((<Gen>x).g) == t_REAL:
             _gen = x
             self._set_from_GEN_REAL(_gen.g)
-        elif isinstance(x, long):
+        elif isinstance(x, int):
             x = Integer(x)
             mpfr_set_z(self.value, (<Integer>x).value, parent.rnd)
-        elif isinstance(x, int):
-            mpfr_set_si(self.value, x, parent.rnd)
         elif isinstance(x, float):
             mpfr_set_d(self.value, x, parent.rnd)
         elif isinstance(x, complex) and x.imag == 0:
@@ -2379,7 +2377,7 @@ cdef class RealNumber(sage.structure.element.RingElement):
             sage: RR(1) + RIF(1)
             doctest:...:
             DeprecationWarning: automatic conversions from floating-point numbers to intervals are deprecated
-            See http://trac.sagemath.org/15114 for details.
+            See https://github.com/sagemath/sage/issues/15114 for details.
             2
             sage: import warnings; warnings.resetwarnings()
         """
@@ -2400,7 +2398,7 @@ cdef class RealNumber(sage.structure.element.RingElement):
             sage: RR(2) - RIF(1)
             doctest:...:
             DeprecationWarning: automatic conversions from floating-point numbers to intervals are deprecated
-            See http://trac.sagemath.org/15114 for details.
+            See https://github.com/sagemath/sage/issues/15114 for details.
             1
             sage: import warnings; warnings.resetwarnings()
         """
@@ -2421,7 +2419,7 @@ cdef class RealNumber(sage.structure.element.RingElement):
             sage: RR(1) * RIF(1)
             doctest:...:
             DeprecationWarning: automatic conversions from floating-point numbers to intervals are deprecated
-            See http://trac.sagemath.org/15114 for details.
+            See https://github.com/sagemath/sage/issues/15114 for details.
             1
             sage: import warnings; warnings.resetwarnings()
         """
@@ -2442,7 +2440,7 @@ cdef class RealNumber(sage.structure.element.RingElement):
             sage: RR(1) / RIF(1/2)
             doctest:...:
             DeprecationWarning: automatic conversions from floating-point numbers to intervals are deprecated
-            See http://trac.sagemath.org/15114 for details.
+            See https://github.com/sagemath/sage/issues/15114 for details.
             2
             sage: import warnings; warnings.resetwarnings()
         """
@@ -5678,11 +5676,13 @@ cdef class RealLiteral(RealNumber):
             1.3000000000000000000000000000000000000000000000000000000000
             sage: 1.3 + 1.2
             2.50000000000000
+            sage: RR(1_0000.000000000000000000000000000000000000)
+            10000.0000000000
         """
         RealNumber.__init__(self, parent, x, base)
         if isinstance(x, str):
             self.base = base
-            self.literal = x
+            self.literal = x.replace('_', '')
 
     def __neg__(self):
         """
@@ -5896,7 +5896,7 @@ def is_RealField(x):
         doctest:warning...
         DeprecationWarning: is_RealField is deprecated;
         use isinstance(..., sage.rings.abc.RealField) instead
-        See https://trac.sagemath.org/32610 for details.
+        See https://github.com/sagemath/sage/issues/32610 for details.
         True
         sage: sage.rings.real_mpfr.is_RealField(CC)
         False
@@ -6074,7 +6074,7 @@ cdef class int_toRR(Map):
         cdef long x_long
         cdef mpz_t x_mpz
 
-        if not isinstance(x, (int, long)):
+        if not isinstance(x, int):
             x = int(x)
 
         integer_check_long_py(x, &x_long, &err)
@@ -6102,7 +6102,7 @@ def create_RealField(*args, **kwds):
         sage: from sage.rings.real_mpfr import create_RealField
         sage: create_RealField()
         doctest:...: DeprecationWarning: Please import create_RealField from sage.rings.real_field
-        See http://trac.sagemath.org/24511 for details.
+        See https://github.com/sagemath/sage/issues/24511 for details.
         Real Field with 53 bits of precision
     """
     #deprecation has already been imported in this file

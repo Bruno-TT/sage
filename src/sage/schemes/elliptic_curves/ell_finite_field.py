@@ -36,8 +36,6 @@ from sage.arith.all import gcd, lcm, binomial
 from sage.misc.cachefunc import cached_method
 from sage.groups.additive_abelian.additive_abelian_wrapper import AdditiveAbelianGroupWrapper
 
-import sage.plot.all as plot
-
 
 class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_field):
     r"""
@@ -98,10 +96,9 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         if not R.is_prime_field():
             raise NotImplementedError
 
-        G = plot.Graphics()
-        G += plot.points([P[0:2] for P in self.points() if not P.is_zero()], *args, **kwds)
+        from sage.plot.point import points
 
-        return G
+        return points([P[0:2] for P in self.points() if not P.is_zero()], *args, **kwds)
 
     def _points_via_group_structure(self):
         """
@@ -675,6 +672,28 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         else:
             return R.gen(1)
 
+    def frobenius_endomorphism(self):
+        r"""
+        Return the `q`-power Frobenius endomorphism of this elliptic
+        curve, where `q` is the cardinality of the (finite) base field.
+
+        EXAMPLES::
+
+            sage: F.<t> = GF(11^4)
+            sage: E = EllipticCurve([t,t])
+            sage: E.frobenius_endomorphism()
+            Frobenius endomorphism of degree 14641 = 11^4:
+              From: Elliptic Curve defined by y^2 = x^3 + t*x + t over Finite Field in t of size 11^4
+              To:   Elliptic Curve defined by y^2 = x^3 + t*x + t over Finite Field in t of size 11^4
+            sage: E.frobenius_endomorphism() == E.frobenius_isogeny(4)
+            True
+
+        .. SEEALSO::
+
+            :meth:`~sage.schemes.elliptic_curves.ell_generic.EllipticCurve_generic.frobenius_isogeny`
+        """
+        return self.frobenius_isogeny(self.base_field().degree())
+
     def cardinality_pari(self):
         r"""
         Return the cardinality of ``self`` using PARI.
@@ -958,28 +977,91 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         if len(gens) == 2:
 
             P, Q = gens
-            n = self.cardinality()      # cached
-            n1 = P.order()              # cached
+            n = self.cardinality()              # cached
+            n1 = P.order()                      # cached
             n2 = n//n1
-            assert not n1 * Q           # PARI should guarantee this
+            assert not n1 * Q                   # PARI should guarantee this
 
             k = n1.prime_to_m_part(n2)
-            Q *= k                      # don't need; kill that part
+            Q *= k                              # don't need; kill that part
             nQ = n2 * generic.order_from_multiple(n2*Q, n1//k//n2)
 
             S = n//nQ * P
             T = n2 * Q
-            S.set_order(nQ//n2)         # for .discrete_log()
+            S.set_order(nQ//n2, check=False)    # for .discrete_log()
             x = S.discrete_log(T)
             Q -= x * n1//nQ * P
 
-            Q.set_order(n2)             # verifies n2*Q == 0
+            assert not n2 * Q                   # by construction
+            Q.set_order(n2, check=False)
+
             gens = P, Q
 
-        orders = [T.order() for T in gens]  # cached
+        orders = [T.order() for T in gens]      # cached
 
         self.gens.set_cache(gens)
         return AdditiveAbelianGroupWrapper(self.point_homset(), gens, orders)
+
+    def torsion_basis(self, n):
+        r"""
+        Return a basis of the `n`-torsion subgroup of this elliptic curve,
+        assuming it is fully rational.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(62207^2), [1,0])
+            sage: E.abelian_group()
+            Additive abelian group isomorphic to Z/62208 + Z/62208 embedded in Abelian group of points on Elliptic Curve defined by y^2 = x^3 + x over Finite Field in z2 of size 62207^2
+            sage: PA,QA = E.torsion_basis(2^8)
+            sage: PA.weil_pairing(QA, 2^8).multiplicative_order()
+            256
+            sage: PB,QB = E.torsion_basis(3^5)
+            sage: PB.weil_pairing(QB, 3^5).multiplicative_order()
+            243
+
+        ::
+
+            sage: E = EllipticCurve(GF(101), [4,4])
+            sage: E.torsion_basis(23)
+            Traceback (most recent call last):
+            ...
+            ValueError: curve does not have full rational 23-torsion
+            sage: F = E.division_field(23); F
+            Finite Field in t of size 101^11
+            sage: EE = E.change_ring(F)
+            sage: P, Q = EE.torsion_basis(23)
+            sage: P  # random
+            (89*z11^10 + 51*z11^9 + 96*z11^8 + 8*z11^7 + 67*z11^6
+             + 31*z11^5 + 55*z11^4 + 59*z11^3 + 28*z11^2 + 8*z11 + 88
+             : 40*z11^10 + 33*z11^9 + 80*z11^8 + 87*z11^7 + 97*z11^6
+             + 69*z11^5 + 56*z11^4 + 17*z11^3 + 26*z11^2 + 69*z11 + 11
+             : 1)
+            sage: Q  # random
+            (25*z11^10 + 61*z11^9 + 49*z11^8 + 17*z11^7 + 80*z11^6
+             + 20*z11^5 + 49*z11^4 + 52*z11^3 + 61*z11^2 + 27*z11 + 61
+             : 60*z11^10 + 91*z11^9 + 89*z11^8 + 7*z11^7 + 63*z11^6
+             + 55*z11^5 + 23*z11^4 + 17*z11^3 + 90*z11^2 + 91*z11 + 68
+             : 1)
+
+        .. SEEALSO::
+
+            Use :meth:`~sage.schemes.elliptic_curves.ell_field.EllipticCurve_field.division_field`
+            to determine a field extension containing the full `\ell`-torsion subgroup.
+
+        ALGORITHM:
+
+        This method currently uses :meth:`abelian_group` and
+        :meth:`AdditiveAbelianGroupWrapper.torsion_subgroup`.
+        """
+        # TODO: In many cases this is not the fastest algorithm.
+        # Alternatives include factoring division polynomials and
+        # random sampling (like PARI's ellgroup, but with a milder
+        # termination condition). We should implement these too
+        # and figure out when to use which.
+        T = self.abelian_group().torsion_subgroup(n)
+        if T.invariants() != (n, n):
+            raise ValueError(f'curve does not have full rational {n}-torsion')
+        return tuple(P.element() for P in T.gens())
 
     def is_isogenous(self, other, field=None, proof=True):
         """
@@ -1158,7 +1240,7 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         """
         return not is_j_supersingular(self.j_invariant(), proof=proof)
 
-    def set_order(self, value, num_checks=8):
+    def set_order(self, value, *, check=True, num_checks=8):
         r"""
         Set the value of self._order to value.
 
@@ -1170,9 +1252,12 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         - ``value`` -- integer in the Hasse-Weil range for this
           curve.
 
-        - ``num_checks`` (integer, default: 8) -- number of times to
-          check whether value*(a random point on this curve) is
-          equal to the identity.
+        - ``check`` (boolean, default: ``True``) -- whether or
+          not to run sanity checks on the input.
+
+        - ``num_checks`` (integer, default: 8) -- if ``check`` is
+          ``True``, the number of times to check whether ``value``
+          times a random point on this curve equals the identity.
 
         OUTPUT:
 
@@ -1270,16 +1355,17 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         """
         value = Integer(value)
 
-        # Is value in the Hasse range?
-        q = self.base_field().order()
-        a,b = Hasse_bounds(q,1)
-        if not a <= value <= b:
-            raise ValueError('Value %s illegal (not an integer in the Hasse range)' % value)
-        # Is value*random == identity?
-        for i in range(num_checks):
-            G = self.random_point()
-            if value * G != self(0):
-                raise ValueError('Value %s illegal (multiple of random point not the identity)' % value)
+        if check:
+            # Is value in the Hasse range?
+            q = self.base_field().order()
+            a,b = Hasse_bounds(q,1)
+            if not a <= value <= b:
+                raise ValueError('Value %s illegal (not an integer in the Hasse range)' % value)
+            # Is value*random == identity?
+            for i in range(num_checks):
+                G = self.random_point()
+                if value * G != self(0):
+                    raise ValueError('Value %s illegal (multiple of random point not the identity)' % value)
 
         # TODO: It might help some of PARI's algorithms if we
         # could copy this over to the .pari_curve() as well.
@@ -1288,6 +1374,46 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         # "member functions" of PARI objects.
 
         self._order = value
+
+    def _fetch_cached_order(self, other):
+        r"""
+        This method copies the ``_order`` member from ``other`` to
+        ``self``. Both curves must have the same finite base field.
+
+        This is used in
+        :class:`~sage.schemes.elliptic_curves.hom.EllipticCurveHom`
+        to keep track of an already computed curve order: According
+        to Tate's theorem [Tate1966b]_, isogenous elliptic curves
+        over a finite field have the same number of rational points.
+
+        EXAMPLES::
+
+            sage: E1 = EllipticCurve(GF(2^127-1), [1,2,3,4,5])
+            sage: E1.set_order(170141183460469231746191640949390434666)
+            sage: E2 = EllipticCurve(GF(2^127-1), [115649500210559831225094148253060920818, 36348294106991415644658737184600079491])
+            sage: E2._fetch_cached_order(E1)
+            sage: E2._order
+            170141183460469231746191640949390434666
+
+        TESTS::
+
+            sage: E3 = EllipticCurve(GF(17), [1,2,3,4,5])
+            sage: hasattr(E3, '_order')
+            False
+            sage: E3._fetch_cached_order(E1)
+            Traceback (most recent call last):
+            ...
+            ValueError: curves have distinct base fields
+        """
+        if hasattr(self, '_order') or not hasattr(other, '_order'):
+            return
+        F = self.base_field()
+        if F != other.base_field():
+            raise ValueError('curves have distinct base fields')
+        n = getattr(other, '_order', None)
+        if n is not None:
+            self._order = n
+
 
 # dict to hold precomputed coefficient vectors of supersingular j values (excluding 0, 1728):
 

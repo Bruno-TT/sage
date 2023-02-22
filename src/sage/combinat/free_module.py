@@ -256,7 +256,7 @@ class CombinatorialFreeModule(UniqueRepresentation, Module, IndexedGenerators):
         sage: XQ == XQ
         True
 
-    We check that ticket :trac:`28681` is fixed::
+    We check that issue :trac:`28681` is fixed::
 
         sage: F = CombinatorialFreeModule(ZZ, ZZ); F.rename("F")
         sage: FF = tensor((F,F))
@@ -1600,6 +1600,7 @@ class CartesianProductWithFlattening():
     """
     A class for Cartesian product constructor, with partial flattening
     """
+
     def __init__(self, flatten):
         """
         INPUT:

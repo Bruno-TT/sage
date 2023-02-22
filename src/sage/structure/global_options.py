@@ -663,7 +663,7 @@ class Option():
 
             sage: config.size(value=None)
             doctest:...: DeprecationWarning: keyword argument "value" should be replaced by positional argument
-            See https://trac.sagemath.org/30763 for details.
+            See https://github.com/sagemath/sage/issues/30763 for details.
             sage: config.size() is None
             True
             sage: config.size(1, 2)
@@ -1390,7 +1390,7 @@ class GlobalOptions(metaclass=GlobalOptionsMeta):
             sage: Partitions.options == Tableaux.options
             False
         """
-        return self.__getstate__() == other.__getstate__()
+        return isinstance(other, GlobalOptions) and self.__getstate__() == other.__getstate__()
 
     def _add_option(self, option, specifications):
         r"""
